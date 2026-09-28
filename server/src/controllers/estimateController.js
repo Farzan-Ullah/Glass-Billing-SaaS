@@ -94,6 +94,7 @@ exports.convertToQuotation = async (req, res) => {
       date: new Date(),
       validUntil: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000), // 15 days
       dimensionUnit: estimate.dimensionUnit,
+      chargeableRuleAddInches: estimate.chargeableRuleAddInches || 0,
       items: estimate.items,
       subtotal: estimate.subtotal,
       discountPercent: estimate.discountPercent,

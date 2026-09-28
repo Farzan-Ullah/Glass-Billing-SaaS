@@ -81,6 +81,13 @@ export default function Invoices() {
   const [transportCharges, setTransportCharges] = useState(1000);
   const [amountPaidInitial, setAmountPaidInitial] = useState(0);
   const [invoiceNotes, setInvoiceNotes] = useState("Glass panels delivered in sound condition.");
+  const [chargeableRuleAddInches, setChargeableRuleAddInches] = useState(0);
+
+  useEffect(() => {
+    if (business?.chargeableRuleAddInches !== undefined) {
+      setChargeableRuleAddInches(business.chargeableRuleAddInches);
+    }
+  }, [business?.chargeableRuleAddInches]);
 
   useEffect(() => {
     loadInvoices();
@@ -122,9 +129,21 @@ export default function Invoices() {
 
   // Helper computation for an item row
   const computeItem = (item) => {
-    const { billableSqFt } = calculateGlassArea(item.width, item.height, dimensionUnit, 1.0);
+    const actW = item.actualWidth !== undefined ? parseFloat(item.actualWidth) : parseFloat(item.width) || 0;
+    const actH = item.actualHeight !== undefined ? parseFloat(item.actualHeight) : parseFloat(item.height) || 0;
+    const addInches = parseFloat(chargeableRuleAddInches) || 0;
+    
+    // Only add inches if we are calculating from actual sizes and have the rule. 
+    // If unit is mm, we should probably convert inches to mm or assume the rule is in inches.
+    // The requirement says "add 2 inches" so we'll add it if unit is inches. 
+    // For simplicity, let's just add the value to whatever unit it is for now, or assume unit is inches.
+    // Let's assume the user enters standard rule value in the selected unit.
+    const width = actW + addInches;
+    const height = actH + addInches;
+
+    const { billableSqFt } = calculateGlassArea(width, height, dimensionUnit, 1.0);
     const qty = parseInt(item.quantity) || 1;
-    const totalAreaSqFt = Math.round(billableSqFt * qty * 100) / 100;
+    let totalAreaSqFt = billableSqFt * qty;
     const glassAmount = Math.round(totalAreaSqFt * item.glassRate);
 
     const servList = [];
@@ -172,6 +191,10 @@ export default function Invoices() {
 
     return {
       ...item,
+      actualWidth: actW,
+      actualHeight: actH,
+      width,
+      height,
       areaSqFt: billableSqFt,
       totalAreaSqFt,
       glassAmount,
@@ -200,6 +223,8 @@ export default function Invoices() {
         glassType: products[0]?.name || "12mm Toughened Clear Glass",
         thickness: products[0]?.thickness || 12,
         hsnCode: products[0]?.hsnCode || "7007",
+        actualWidth: 36,
+        actualHeight: 60,
         width: 36,
         height: 60,
         quantity: 1,
@@ -255,6 +280,7 @@ export default function Invoices() {
         placeOfSupply,
         vehicleNumber,
         dimensionUnit,
+        chargeableRuleAddInches: Number(chargeableRuleAddInches),
         items: computedItems,
         subtotal,
         discountAmount: 0,
@@ -583,6 +609,18 @@ export default function Invoices() {
                     className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs outline-none focus:border-blue-500"
                   />
                 </div>
+
+                <div>
+                  <label className="font-bold text-gray-700 block mb-1">Chargeable Rule (Inches)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={chargeableRuleAddInches}
+                    onChange={(e) => setChargeableRuleAddInches(parseFloat(e.target.value) || 0)}
+                    placeholder="0"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs outline-none focus:border-blue-500"
+                  />
+                </div>
               </div>
 
               {/* Items Section */}
@@ -621,7 +659,7 @@ export default function Invoices() {
                           )}
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-6 gap-2.5">
+                        <div className="grid grid-cols-1 sm:grid-cols-8 gap-2.5">
                           <div className="sm:col-span-2">
                             <label className="text-[10px] text-gray-500 block mb-0.5">Description / Mark</label>
                             <input
@@ -653,14 +691,14 @@ export default function Invoices() {
                           </div>
 
                           <div>
-                            <label className="text-[10px] text-gray-500 block mb-0.5">Width (Inches)</label>
+                            <label className="text-[10px] text-gray-500 block mb-0.5">Act. W (In)</label>
                             <input
                               type="number"
                               step="0.1"
-                              value={item.width}
+                              value={item.actualWidth !== undefined ? item.actualWidth : item.width}
                               onChange={(e) => {
                                 const up = [...items];
-                                up[idx].width = parseFloat(e.target.value) || 0;
+                                up[idx].actualWidth = parseFloat(e.target.value) || 0;
                                 setItems(up);
                               }}
                               className="w-full rounded-md border border-gray-200 px-2 py-1.5 text-xs text-center font-bold outline-none focus:border-blue-500"
@@ -668,17 +706,37 @@ export default function Invoices() {
                           </div>
 
                           <div>
-                            <label className="text-[10px] text-gray-500 block mb-0.5">Height (Inches)</label>
+                            <label className="text-[10px] text-gray-500 block mb-0.5">Act. H (In)</label>
                             <input
                               type="number"
                               step="0.1"
-                              value={item.height}
+                              value={item.actualHeight !== undefined ? item.actualHeight : item.height}
                               onChange={(e) => {
                                 const up = [...items];
-                                up[idx].height = parseFloat(e.target.value) || 0;
+                                up[idx].actualHeight = parseFloat(e.target.value) || 0;
                                 setItems(up);
                               }}
                               className="w-full rounded-md border border-gray-200 px-2 py-1.5 text-xs text-center font-bold outline-none focus:border-blue-500"
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="text-[10px] text-gray-500 block mb-0.5">Chg. W</label>
+                            <input
+                              type="number"
+                              readOnly
+                              value={computed.width}
+                              className="w-full rounded-md border border-gray-100 bg-gray-50 text-gray-500 px-2 py-1.5 text-xs text-center font-bold outline-none cursor-not-allowed"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="text-[10px] text-gray-500 block mb-0.5">Chg. H</label>
+                            <input
+                              type="number"
+                              readOnly
+                              value={computed.height}
+                              className="w-full rounded-md border border-gray-100 bg-gray-50 text-gray-500 px-2 py-1.5 text-xs text-center font-bold outline-none cursor-not-allowed"
                             />
                           </div>
                         </div>

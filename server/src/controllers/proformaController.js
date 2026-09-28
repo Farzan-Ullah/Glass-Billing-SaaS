@@ -118,6 +118,7 @@ exports.convertToInvoice = async (req, res) => {
       customer: proforma.customer,
       placeOfSupply: "Maharashtra (27)",
       dimensionUnit: proforma.dimensionUnit,
+      chargeableRuleAddInches: proforma.chargeableRuleAddInches || 0,
       items: proforma.items,
       subtotal: proforma.subtotal,
       discountAmount: proforma.discountAmount,

@@ -94,6 +94,7 @@ exports.convertToProforma = async (req, res) => {
       customer: quotation.customer,
       date: new Date(),
       dimensionUnit: quotation.dimensionUnit,
+      chargeableRuleAddInches: quotation.chargeableRuleAddInches || 0,
       items: quotation.items,
       subtotal: quotation.subtotal,
       discountAmount: quotation.discountAmount,

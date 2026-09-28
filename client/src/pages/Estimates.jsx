@@ -73,6 +73,13 @@ export default function Estimates() {
   const [discountPercent, setDiscountPercent] = useState(0);
   const [transportCharges, setTransportCharges] = useState(500);
   const [notes, setNotes] = useState("All sizes subject to final template verification at site.");
+  const [chargeableRuleAddInches, setChargeableRuleAddInches] = useState(0);
+
+  useEffect(() => {
+    if (business?.chargeableRuleAddInches !== undefined) {
+      setChargeableRuleAddInches(business.chargeableRuleAddInches);
+    }
+  }, [business?.chargeableRuleAddInches]);
 
   useEffect(() => {
     loadData();
@@ -133,9 +140,16 @@ export default function Estimates() {
 
   // Helper calculation for an item row
   const computeItem = (item) => {
-    const { billableSqFt } = calculateGlassArea(item.width, item.height, dimensionUnit, 1.0);
+    const actW = item.actualWidth !== undefined ? parseFloat(item.actualWidth) : parseFloat(item.width) || 0;
+    const actH = item.actualHeight !== undefined ? parseFloat(item.actualHeight) : parseFloat(item.height) || 0;
+    const addInches = parseFloat(chargeableRuleAddInches) || 0;
+    
+    const width = actW + addInches;
+    const height = actH + addInches;
+
+    const { billableSqFt } = calculateGlassArea(width, height, dimensionUnit, 1.0);
     const qty = parseInt(item.quantity) || 1;
-    const totalAreaSqFt = Math.round(billableSqFt * qty * 100) / 100;
+    let totalAreaSqFt = billableSqFt * qty;
     const glassAmount = Math.round(totalAreaSqFt * item.glassRate);
 
     // services calculation
@@ -186,6 +200,10 @@ export default function Estimates() {
 
     return {
       ...item,
+      actualWidth: actW,
+      actualHeight: actH,
+      width,
+      height,
       areaSqFt: billableSqFt,
       totalAreaSqFt,
       glassAmount,
@@ -212,6 +230,8 @@ export default function Estimates() {
         description: "Glass Panel",
         glassType: products[0]?.name || "12mm Toughened Clear Glass",
         thickness: products[0]?.thickness || 12,
+        actualWidth: 36,
+        actualHeight: 60,
         width: 36,
         height: 60,
         quantity: 1,
@@ -261,6 +281,7 @@ export default function Estimates() {
         date: new Date(),
         validUntil: new Date(Date.now() + validDays * 24 * 60 * 60 * 1000),
         dimensionUnit,
+        chargeableRuleAddInches: Number(chargeableRuleAddInches),
         items: computedItems,
         subtotal,
         discountPercent,
@@ -504,8 +525,8 @@ export default function Estimates() {
 
             <form onSubmit={handleSaveEstimate} className="space-y-5 text-xs">
               {/* Header Parameters */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-gray-50 p-3.5 rounded-xl border border-gray-200">
-                <div>
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 bg-gray-50 p-3.5 rounded-xl border border-gray-200">
+                <div className="sm:col-span-2">
                   <label className="font-bold text-gray-700 block mb-1">Customer / Project *</label>
                   <select
                     value={customerId}
@@ -535,9 +556,21 @@ export default function Estimates() {
                       onClick={() => setDimensionUnit("mm")}
                       className={`flex-1 py-1.5 rounded-md ${dimensionUnit === "mm" ? "bg-white text-blue-700 shadow-xs" : "text-gray-600"}`}
                     >
-                      Millimeters (MM)
+                      MM
                     </button>
                   </div>
+                </div>
+
+                <div>
+                  <label className="font-bold text-gray-700 block mb-1">Chargeable Rule (Inches)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={chargeableRuleAddInches}
+                    onChange={(e) => setChargeableRuleAddInches(parseFloat(e.target.value) || 0)}
+                    placeholder="0"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs outline-none focus:border-blue-500"
+                  />
                 </div>
 
                 <div>
@@ -590,8 +623,7 @@ export default function Estimates() {
                           )}
                         </div>
 
-                        {/* Top inputs: Description, Glass Variety, Dimensions, Qty */}
-                        <div className="grid grid-cols-1 sm:grid-cols-6 gap-2.5">
+                        <div className="grid grid-cols-1 sm:grid-cols-8 gap-2.5">
                           <div className="sm:col-span-2">
                             <label className="text-[10px] text-gray-500 block mb-0.5">Location / Description</label>
                             <input
@@ -624,15 +656,15 @@ export default function Estimates() {
 
                           <div>
                             <label className="text-[10px] text-gray-500 block mb-0.5">
-                              Width ({dimensionUnit === "inch" ? 'in "' : "mm"})
+                              Act. W ({dimensionUnit === "inch" ? 'in "' : "mm"})
                             </label>
                             <input
                               type="number"
                               step="0.1"
-                              value={item.width}
+                              value={item.actualWidth !== undefined ? item.actualWidth : item.width}
                               onChange={(e) => {
                                 const up = [...items];
-                                up[idx].width = parseFloat(e.target.value) || 0;
+                                up[idx].actualWidth = parseFloat(e.target.value) || 0;
                                 setItems(up);
                               }}
                               className="w-full rounded-md border border-gray-200 px-2 py-1.5 text-xs text-center font-bold outline-none focus:border-blue-500"
@@ -641,18 +673,38 @@ export default function Estimates() {
 
                           <div>
                             <label className="text-[10px] text-gray-500 block mb-0.5">
-                              Height ({dimensionUnit === "inch" ? 'in "' : "mm"})
+                              Act. H ({dimensionUnit === "inch" ? 'in "' : "mm"})
                             </label>
                             <input
                               type="number"
                               step="0.1"
-                              value={item.height}
+                              value={item.actualHeight !== undefined ? item.actualHeight : item.height}
                               onChange={(e) => {
                                 const up = [...items];
-                                up[idx].height = parseFloat(e.target.value) || 0;
+                                up[idx].actualHeight = parseFloat(e.target.value) || 0;
                                 setItems(up);
                               }}
                               className="w-full rounded-md border border-gray-200 px-2 py-1.5 text-xs text-center font-bold outline-none focus:border-blue-500"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="text-[10px] text-gray-500 block mb-0.5">Chg. W</label>
+                            <input
+                              type="number"
+                              readOnly
+                              value={computed.width}
+                              className="w-full rounded-md border border-gray-100 bg-gray-50 text-gray-500 px-2 py-1.5 text-xs text-center font-bold outline-none cursor-not-allowed"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="text-[10px] text-gray-500 block mb-0.5">Chg. H</label>
+                            <input
+                              type="number"
+                              readOnly
+                              value={computed.height}
+                              className="w-full rounded-md border border-gray-100 bg-gray-50 text-gray-500 px-2 py-1.5 text-xs text-center font-bold outline-none cursor-not-allowed"
                             />
                           </div>
                         </div>

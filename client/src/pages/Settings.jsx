@@ -38,6 +38,7 @@ export default function Settings() {
     upiId: ub.upiId || "",
     defaultUnit: ub.defaultUnit || "inch",
     minChargeableArea: ub.minChargeableArea ?? 1.0,
+    chargeableRuleAddInches: ub.chargeableRuleAddInches || 0,
     roundDimensionsToInch: ub.roundDimensionsToInch ?? true,
     defaultGstRate: ub.defaultGstRate ?? 18,
     invoicePrefix: ub.invoicePrefix || "INV-",
@@ -322,6 +323,17 @@ export default function Settings() {
                 step="0.1"
                 value={formData.minChargeableArea}
                 onChange={(e) => setFormData({ ...formData, minChargeableArea: parseFloat(e.target.value) || 1.0 })}
+                className="w-full rounded-lg border border-gray-200 p-2 text-xs outline-none focus:border-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold text-gray-700 block mb-1">Chargeable Rule (Add Inches)</label>
+              <input
+                type="number"
+                step="0.1"
+                value={formData.chargeableRuleAddInches}
+                onChange={(e) => setFormData({ ...formData, chargeableRuleAddInches: parseFloat(e.target.value) || 0 })}
                 className="w-full rounded-lg border border-gray-200 p-2 text-xs outline-none focus:border-blue-500"
               />
             </div>

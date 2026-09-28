@@ -19,6 +19,8 @@ const settingSchema = new mongoose.Schema(
     upiId: { type: String, default: "apexglass@okaxis" },
     defaultUnit: { type: String, enum: ["inch", "mm"], default: "inch" },
     minChargeableArea: { type: Number, default: 1.0 },
+    extraSqFt: { type: Number, default: 0 },
+    chargeableRuleAddInches: { type: Number, default: 0 },
     roundDimensionsToInch: { type: Boolean, default: true },
     defaultGstRate: { type: Number, default: 18 },
     invoicePrefix: { type: String, default: "INV-" },

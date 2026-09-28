@@ -4,6 +4,8 @@ const challanItemSchema = new mongoose.Schema({
   description: { type: String, default: "Glass Panel" },
   glassType: { type: String },
   thickness: { type: Number },
+  actualWidth: { type: Number },
+  actualHeight: { type: Number },
   width: { type: Number, required: true },
   height: { type: Number, required: true },
   unit: { type: String, default: "inch" },
@@ -30,6 +32,7 @@ const deliveryChallanSchema = new mongoose.Schema(
     driverPhone: { type: String },
     items: [challanItemSchema],
     totalPieces: { type: Number, default: 0 },
+    chargeableRuleAddInches: { type: Number, default: 0 },
     totalSqFt: { type: Number, default: 0 },
     status: {
       type: String,

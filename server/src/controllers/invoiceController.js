@@ -148,6 +148,7 @@ exports.createChallanFromInvoice = async (req, res) => {
       driverPhone: req.body.driverPhone || "+91 98200 11223",
       items,
       totalPieces,
+      chargeableRuleAddInches: invoice.chargeableRuleAddInches || 0,
       totalSqFt: Math.round(totalSqFt * 100) / 100,
       status: "Pending Dispatch",
       notes: "Handle with extreme care. Glass sheets properly cushioned in wooden rack.",
